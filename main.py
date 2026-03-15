@@ -25,9 +25,9 @@ for i in range(1, 8):
 
 # Bullet state
 bullets = []
-bullet_speed = 700
+bullet_speed = 500
 bullet_radius = 6
-shoot_cooldown = 0.15  # seconds between shots
+shoot_cooldown = 0.3  # seconds between shots
 shoot_timer = 0.0
 bullet_damage = 25
 
@@ -79,25 +79,27 @@ while running:
 
     shoot_timer -= dt
     bullet_position = pygame.Vector2(player_pos.x + green_images[current_sprite].get_width() / 2, player_pos.y + green_images[current_sprite].get_height() / 2)
-    if keys[pygame.K_UP]:
+
+  
+    if shoot_timer <= 0 and keys[pygame.K_UP]:
       bullets.append({
         "pos": bullet_position,
         "vel": pygame.Vector2(0, -bullet_speed),
       })
       shoot_timer = shoot_cooldown
-    if keys[pygame.K_DOWN]:
+    if shoot_timer <= 0 and keys[pygame.K_DOWN]:
       bullets.append({
         "pos": bullet_position,
         "vel": pygame.Vector2(0, bullet_speed),
       })
       shoot_timer = shoot_cooldown
-    if keys[pygame.K_LEFT]:
+    if shoot_timer <= 0 and keys[pygame.K_LEFT]:
       bullets.append({
         "pos": bullet_position,
         "vel": pygame.Vector2(-bullet_speed, 0),
       })
       shoot_timer = shoot_cooldown
-    if keys[pygame.K_RIGHT]:
+    if shoot_timer <= 0 and keys[pygame.K_RIGHT]:
       bullets.append({
         "pos": bullet_position,
         "vel": pygame.Vector2(bullet_speed, 0),
