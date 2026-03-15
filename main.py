@@ -1,5 +1,6 @@
 # Example file showing a circle moving on screen
 import pygame
+# Removed invalid import; use pygame.Rect directly in the code
 
 
 
@@ -10,15 +11,28 @@ clock = pygame.time.Clock()
 running = True
 dt = 0
 
-images = [] 
+green_images = [] 
 for i in range(1, 8):
   image = pygame.image.load(f"sprites/green_virus/Green{i}.png").convert_alpha()
   scaled_image = pygame.transform.scale(image, (image.get_width() * 2, image.get_height() * 2))
-  images.append(scaled_image)
+  green_images.append(scaled_image)
 
+blue_images = []
+for i in range(1, 8):
+  image = pygame.image.load(f"sprites/blue_virus/Blue{i}.png").convert_alpha()
+  scaled_image = pygame.transform.scale(image, (image.get_width() * 2, image.get_height() * 2))
+  blue_images.append(scaled_image)
 
+# Bullet state
+bullets = []
+bullet_speed = 700
+bullet_radius = 6
+shoot_cooldown = 0.15  # seconds between shots
+shoot_timer = 0.0
 
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+enemy_pos = pygame.Vector2(screen.get_width() / 4, screen.get_height() / 4)
+enemy_killed = False
 
 current_sprite = 1
 image_clock = 0
@@ -29,11 +43,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
-
-    screen.blit(images[current_sprite], player_pos)
-
+    
+    
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         player_pos.y -= 300 * dt
@@ -44,7 +55,67 @@ while running:
     if keys[pygame.K_d]:
         player_pos.x += 300 * dt
 
+    # Update bullets
+    for b in bullets:
+        b["pos"] += b["vel"] * dt
+
+    for b in bullets:
+      if not enemy_killed and enemy_hitbox.collidepoint(b["pos"].x, b["pos"].y):
+          enemy_killed = True
+          bullets.remove(b)
+
+    shoot_timer -= dt
+    bullet_position = pygame.Vector2(player_pos.x + green_images[current_sprite].get_width() / 2, player_pos.y + green_images[current_sprite].get_height() / 2)
+    if keys[pygame.K_UP]:
+      bullets.append({
+        "pos": bullet_position,
+        "vel": pygame.Vector2(0, -bullet_speed),
+      })
+      shoot_timer = shoot_cooldown
+    if keys[pygame.K_DOWN]:
+      bullets.append({
+        "pos": bullet_position,
+        "vel": pygame.Vector2(0, bullet_speed),
+      })
+      shoot_timer = shoot_cooldown
+    if keys[pygame.K_LEFT]:
+      bullets.append({
+        "pos": bullet_position,
+        "vel": pygame.Vector2(-bullet_speed, 0),
+      })
+      shoot_timer = shoot_cooldown
+    if keys[pygame.K_RIGHT]:
+      bullets.append({
+        "pos": bullet_position,
+        "vel": pygame.Vector2(bullet_speed, 0),
+      })
+      shoot_timer = shoot_cooldown
     
+    # Remove off-screen bullets
+    bullets = [
+        b for b in bullets
+        if -20 <= b["pos"].x <= screen.get_width() + 20
+        and -20 <= b["pos"].y <= screen.get_height() + 20
+    ]
+    # Remove 0 velocity bullets
+    bullets = [
+        b for b in bullets
+        if b["vel"].length() > 0
+    ]
+
+    # fill the screen with a color to wipe away anything from last frame
+    screen.fill("purple")
+
+    for b in bullets:
+        pygame.draw.circle(screen, "yellow", (int(b["pos"].x), int(b["pos"].y)), bullet_radius)
+    screen.blit(green_images[current_sprite], player_pos)
+
+    if not enemy_killed:
+      enemy_hitbox = pygame.draw.circle(screen, (255, 0, 0), (int(enemy_pos.x + blue_images[current_sprite].get_width() / 2), int(enemy_pos.y + blue_images[current_sprite].get_height() / 2)), 25)
+      screen.blit(blue_images[current_sprite], enemy_pos)
+
+    
+
 
     # flip() the display to put your work on screen
     pygame.display.flip()
@@ -55,8 +126,12 @@ while running:
     dt = clock.tick(60) / 1000
 
     if image_clock % 5 == 0:
-      current_sprite = (current_sprite + 1) % len(images)
+      current_sprite = (current_sprite + 1) % len(green_images)
 
     image_clock += 1
+
+    for b in bullets:
+        print(b["vel"].length())
+
 
 pygame.quit()
