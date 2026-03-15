@@ -29,10 +29,13 @@ bullet_speed = 700
 bullet_radius = 6
 shoot_cooldown = 0.15  # seconds between shots
 shoot_timer = 0.0
+bullet_damage = 25
 
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 enemy_pos = pygame.Vector2(screen.get_width() / 4, screen.get_height() / 4)
 enemy_killed = False
+enemy_max_health = 100
+enemy_health = enemy_max_health
 
 current_sprite = 1
 image_clock = 0
@@ -59,10 +62,20 @@ while running:
     for b in bullets:
         b["pos"] += b["vel"] * dt
 
-    for b in bullets:
-      if not enemy_killed and enemy_hitbox.collidepoint(b["pos"].x, b["pos"].y):
-          enemy_killed = True
-          bullets.remove(b)
+    # Check bullet collisions against the enemy using circle distance
+    for b in bullets[:]:
+      if not enemy_killed:
+        img = blue_images[current_sprite]
+        enemy_center = pygame.Vector2(enemy_pos.x + img.get_width() / 2, enemy_pos.y + img.get_height() / 2)
+        enemy_radius = 25
+        if (b["pos"] - enemy_center).length() <= enemy_radius:
+          enemy_health -= bullet_damage
+          try:
+            bullets.remove(b)
+          except ValueError:
+            pass
+          if enemy_health <= 0:
+            enemy_killed = True
 
     shoot_timer -= dt
     bullet_position = pygame.Vector2(player_pos.x + green_images[current_sprite].get_width() / 2, player_pos.y + green_images[current_sprite].get_height() / 2)
@@ -111,8 +124,22 @@ while running:
     screen.blit(green_images[current_sprite], player_pos)
 
     if not enemy_killed:
-      enemy_hitbox = pygame.draw.circle(screen, (255, 0, 0), (int(enemy_pos.x + blue_images[current_sprite].get_width() / 2), int(enemy_pos.y + blue_images[current_sprite].get_height() / 2)), 25)
-      screen.blit(blue_images[current_sprite], enemy_pos)
+      img = blue_images[current_sprite]
+      center_x = int(enemy_pos.x + img.get_width() / 2)
+      # Draw health bar above the enemy
+      bar_width = 56
+      bar_height = 8
+      bar_x = center_x - bar_width // 2
+      bar_y = int(enemy_pos.y) - 12
+      # Background
+      pygame.draw.rect(screen, (50, 50, 50), pygame.Rect(bar_x, bar_y, bar_width, bar_height))
+      # Foreground (health)
+      fg_width = max(0, int(bar_width * (enemy_health / enemy_max_health)))
+      pygame.draw.rect(screen, (50, 200, 50), pygame.Rect(bar_x, bar_y, fg_width, bar_height))
+      # Optional border
+      pygame.draw.rect(screen, (0,0,0), pygame.Rect(bar_x, bar_y, bar_width, bar_height), 1)
+      # Draw enemy sprite
+      screen.blit(img, enemy_pos)
 
     
 
